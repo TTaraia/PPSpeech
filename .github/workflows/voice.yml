@@ -1,0 +1,37 @@
+name: Narrate Tigrinya text
+on:
+  workflow_dispatch:
+    inputs:
+      engine:
+        description: "mms = Meta MMS Tigrinya voice; amharic = EXPERIMENT (Amharic male voice reading Tigrinya)"
+        type: choice
+        options: [mms, amharic]
+        default: mms
+      lower:
+        description: "Lower the pitch by this many semitones (0 = off; try 2 to 4 for a deeper voice)"
+        default: "0"
+jobs:
+  narrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: { python-version: "3.12" }
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - run: pip install numpy edge-tts
+      - name: Install MMS dependencies
+        if: ${{ inputs.engine == 'mms' }}
+        run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers uroman
+      - run: python speak_tigrinya.py --engine ${{ inputs.engine }} --lower ${{ inputs.lower }}
+      - uses: actions/upload-artifact@v5
+        with:
+          name: tigrinya-narration
+          path: |
+            speech_ti.mp3
+            speech_ti.srt
+            speech_ti.clean.txt
